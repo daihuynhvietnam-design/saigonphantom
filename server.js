@@ -26,6 +26,11 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
 
+// Tự động chuyển hướng vào trang đăng nhập khi truy cập link gốc
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'login.html'));
+});
+
 // API Đăng ký tài khoản
 app.post('/api/register', (req, res) => {
     const { username, password } = req.body;
