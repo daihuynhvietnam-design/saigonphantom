@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Phòng Chat Ẩn Danh</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        #chatBox { height: 60vh; overflow-y: auto; background: #fff; }
+    </style>
+</head>
+<body class="bg-light">
+    <div class="container mt-4" style="max-width: 600px;">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h4>💬 Nhóm Chat Bí Mật</h4>
+            <div>
+                <span id="userDisplay" class="fw-bold text-primary me-2"></span>
+                <button class="btn btn-sm btn-outline-danger" onclick="logout()">Thoát</button>
+            </div>
+        </div>
+
+        <div class="card shadow">
+            <div id="chatBox" class="p-3 border-bottom"></div>
+            <div class="card-body bg-white">
+                <form id="chatForm" class="row g-2">
+                    <div class="col-12">
+                        <input type="text" id="messageInput" class="form-control" placeholder="Nhập tin nhắn..." autocomplete="off" required>
+                    </div>
+                    <div class="col-12 d-flex justify-content-between align-items-center mt-2">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="anonCheck">
+                            <label class="form-check-label text-muted" for="anonCheck">Gửi ẩn danh 🥷</label>
+                        </div>
+                        <button type="submit" class="btn btn-success px-4">Gửi</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const currentUser = localStorage.getItem('currentUser');
+        if(!currentUser) window.location.href = '/login.html';
+        document.getElementById('userDisplay').innerText = `Xin chào, ${currentUser}`;
+
+        const socket = io();
+        socket.emit('join_room');
+
+        document.getElementById('chatForm').onsubmit = (e) => {
+            e.preventDefault();
+            const input = document.getElementById('messageInput');
+            const isAnon = document.getElementById('anonCheck').checked;
+            
+            if(input.value.trim()) {
+                socket.emit('send_message', {
+                    sender: currentUser,
+                    message: input.value,
+                    isAnonymous: isAnon
+                });
+                input.value = '';
+            }
+        };
+
+        socket.on('receive_message', (data) => {
+            const chatBox = document.getElementById('chatBox');
+            const div = document.createElement('div');
+            div.className = 'mb-2';
+            
+            const nameToShow = data.isAnonymous ? 'Thành viên ẩn danh 🥷' : data.sender;
+            const badgeColor = data.isAnonymous ? 'text-secondary' : 'text-dark fw-bold';
+            
+            div.innerHTML = `<span class="${badgeColor}">${nameToShow}:</span> ${data.message}`;
+            chatBox.appendChild(div);
+            chatBox.scrollTop = chatBox.scrollHeight;
+        });
+
+        function logout() {
+            localStorage.removeItem('currentUser');
+            window.location.href = '/login.html';
+        }
+    </script>
+</body>
+</html>
